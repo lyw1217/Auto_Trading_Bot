@@ -179,10 +179,8 @@ $RECYCLE.BIN/
 # Log File
 *.log
 
-.idea/
+file/
 
-#personal information
-AutoConnect.py
-AutoTrade.py
+.idea/
 
 # End of https://www.toptal.com/developers/gitignore/api/python,vscode,windows

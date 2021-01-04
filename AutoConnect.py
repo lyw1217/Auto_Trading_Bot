@@ -8,6 +8,8 @@ os.system('wmic process where "name like \'%coStarter%\'" call terminate')
 os.system('wmic process where "name like \'%CpStart%\'" call terminate')
 time.sleep(5)        
 
-app = application.Application()
-app.start('C:\CREON\STARTER\coStarter.exe /prj:cp /id:my_id /pwd:my_pw /pwdcert:my_cert_pw /autostart')
+with open('./file/start_str.txt', 'r') as file:
+    start_str = file.read()
+    app = application.Application()
+    app.start(start_str)
 time.sleep(60)

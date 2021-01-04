@@ -6,7 +6,12 @@ from slacker import Slacker
 import time, calendar
 from logger import logger
 
-slack = Slacker('slack key')
+with open('./file/slack_key.txt', 'r') as file:
+    slack_key = file.read()
+    slack = Slacker(slack_key)
+
+file.close()
+
 def dbgout(message):
     """인자로 받은 문자열을 파이썬 셸과 슬랙으로 동시에 출력한다."""
     print(datetime.now().strftime('[%m/%d %H:%M:%S]'), message)
@@ -248,11 +253,20 @@ def sell_all():
 
 if __name__ == '__main__': 
     try:
-        # ['A122630'(KODEX 레버리지),  'A069500'(KODEX 200), 'A305720'(KODEX 2차전지산업), 'A102110'(TIGER 200), 'A114800'(KODEX 인버스) , 'A252670'(KODEX 200선물인버스2X) ]
-        # ['A250780'(TIGER 코스닥150선물인버스), 'A228810'(TIGER 미디어컨텐츠), 'A091180'(KODEX 자동차)]
-        symbol_list = ['A122630',  'A069500', 'A305720', 'A102110', 'A114800' , 'A252670', 'A250780', 'A228810', 'A091180'] # 자동 매매 종목 코드
+        # ['A069500'(KODEX 200),        'A305720'(KODEX 2차전지산업),           'A091180'(KODEX 자동차),            'A091160'(KODEX 반도체)                                     ]4
+        # ['A102110'(TIGER 200),        'A228810'(TIGER 미디어컨텐츠),          'A305540'(TIGER 2차전지테마),       'A091230'(TIGER 반도체),            'A292150'(TIGER TOP10)  ]5
+        # ['A122630'(KODEX 레버리지),   'A233740'(KODEX 코스닥150 레버리지),    'A267770'(TIGER 200선물레버리지),   'A233160'(TIGER 코스닥150 레버리지)                          ]4
+        # ['A114800'(KODEX 인버스),     'A252670'(KODEX 200선물인버스2X),       'A251340'(KODEX 코스닥150선물인버스)                                                            ]3
+        # ['A123310'(TIGER 인버스),     'A250780'(TIGER 코스닥150선물인버스),   'A252710'(TIGER 200선물인버스2X)                                                                ]3
+        # ['A367380'(KINDEX 미국나스닥100)                                                                                                                                      ]1
+        symbol_list = [ 'A069500', 'A305720', 'A091180', 'A091160',
+                        'A102110', 'A228810', 'A305540', 'A091230', 'A292150',
+                        'A122630', 'A233740', 'A267770', 'A233160',
+                        'A114800', 'A252670', 'A251340',
+                        'A123310', 'A250780', 'A252710',
+                        'A367380'   ] # 자동 매매 종목 코드
         bought_list = []     # 매수 완료된 종목 리스트
-        target_buy_count = 9 # 매수할 종목 수
+        target_buy_count = 20 # 매수할 종목 수
         buy_percent = 0.25   # 종목 당 전체 가용 금액에서 매수할 비율
         printlog('check_creon_system() :', check_creon_system())  # 크레온 접속 점검
         stocks = get_stock_balance('ALL')      # 보유한 모든 종목 조회
