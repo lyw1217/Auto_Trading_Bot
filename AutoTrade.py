@@ -5,7 +5,9 @@ from datetime import datetime
 from slacker import Slacker
 import time, calendar
 from logger import logger
+from AutoTradeUtil import write_ws, write_wb
 
+# slack_key 가져오기
 with open('./file/slack_key.txt', 'r') as file:
     slack_key = file.read()
     slack = Slacker(slack_key)
@@ -281,7 +283,7 @@ if __name__ == '__main__':
 
         while True:
             t_now = datetime.now()
-            t_9 = t_now.replace(hour=9, minute=0, second=0, microsecond=0)
+            t_9 = t_now.replace(hour=9, minute=0, second=30, microsecond=0)
             t_start = t_now.replace(hour=9, minute=5, second=0, microsecond=0)  #  9시  5분 매수 시작
             t_sell = t_now.replace(hour=15, minute=15, second=0, microsecond=0) # 15시 15분 매도 시작
             t_exit = t_now.replace(hour=15, minute=20, second=0,microsecond=0)  # 15시 20분 프로그램 종료
@@ -300,16 +302,28 @@ if __name__ == '__main__':
                     if len(bought_list) < target_buy_count:
                         buy_etf(sym)
                         time.sleep(1)
-                if (t_now.minute == 30 or t_now.minute == 0) and send_cnt == 0: # 30분마다 종목명, 수량 반환
+                if ((t_now.minute % 30 ) < 5) and send_cnt == 0: # 30분마다 종목명, 수량 반환
                     get_stock_balance('ALL')
                     send_cnt = 1
                     time.sleep(5)
-                if t_now.minute == 31 and send_cnt == 1: 
+                if ( t_now.minute % 30 >= 5 ) and send_cnt == 1: 
                     send_cnt = 0
 
             if t_sell < t_now < t_exit:  # PM 03:15 ~ PM 03:20 : 일괄 매도
                 if sell_all() == True:
                     dbgout('`sell_all() returned True -> self-destructed!`')
+                    end_cash = int(get_current_cash())
+                    revenue_cash = total_cash - end_cash
+                    revenue_rate = (end_cash / total_cash - 1) * 100
+                    
+                    # 엑셀 출력
+                    write_ws.append( [datetime.now().strftime('%m/%d %H:%M:%S'), total_cash, end_cash, revenue_cash, revenue_rate] )
+                    dbgout("시작금액 : " + str(total_cash))
+                    dbgout("종료금액 : " + str(end_cash))
+                    dbgout("차이     : " + str(revenue_cash))
+                    dbgout("수익률   : " + str(revenue_rate))
+                    write_wb.save('./Auto_Trading_Bot.xlsx')
+                    
                     sys.exit(0)
 
             if t_exit < t_now:  # PM 03:20 ~ :프로그램 종료

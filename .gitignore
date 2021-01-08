@@ -183,4 +183,6 @@ file/
 
 .idea/
 
+*.xlsx
+
 # End of https://www.toptal.com/developers/gitignore/api/python,vscode,windows
