@@ -35,8 +35,8 @@ else :
 write_ws['A1'] = '날짜'
 write_ws['B1'] = '시작금액' # total_cash
 write_ws['C1'] = '종료금액' # end_cash
-write_ws['D1'] = '차이'     # revenue_cash
-write_ws['E1'] = '수익률'   # revenue_rate
+write_ws['D1'] = '수익금'     # revenue_cash
+write_ws['E1'] = '수익률(%)'   # revenue_rate
 
 # 행 단위 추가
 # write_ws.append( [4, 5, 6] )

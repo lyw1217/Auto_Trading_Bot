@@ -313,17 +313,16 @@ if __name__ == '__main__':
                 if sell_all() == True:
                     dbgout('`sell_all() returned True -> self-destructed!`')
                     end_cash = int(get_current_cash())
-                    revenue_cash = total_cash - end_cash
+                    revenue_cash = end_cash - total_cash
                     revenue_rate = (end_cash / total_cash - 1) * 100
                     
                     # 엑셀 출력
                     write_ws.append( [datetime.now().strftime('%m/%d %H:%M:%S'), total_cash, end_cash, revenue_cash, revenue_rate] )
+                    write_wb.save('./Auto_Trading_Bot.xlsx')
                     dbgout("시작금액 : " + str(total_cash))
                     dbgout("종료금액 : " + str(end_cash))
-                    dbgout("차이     : " + str(revenue_cash))
+                    dbgout("수익금   : " + str(revenue_cash))
                     dbgout("수익률   : " + str(revenue_rate))
-                    write_wb.save('./Auto_Trading_Bot.xlsx')
-                    
                     sys.exit(0)
 
             if t_exit < t_now:  # PM 03:20 ~ :프로그램 종료
