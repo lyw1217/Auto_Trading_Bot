@@ -7,10 +7,10 @@ from urllib.parse import urlencode
 import requests
 
 with open('./file/upbit_aces_key.txt', 'r') as file:
-    access_key = file.read()
+    access_key = file.read().rstrip('\n')
 with open('./file/upbit_sec_key.txt', 'r') as file:
-    secret_key = file.read()
-    
+    secret_key = file.read().rstrip('\n')
+
 server_url = 'https://api.upbit.com'
 
 payload = {
