@@ -9,7 +9,7 @@ formatter = logging.Formatter('[%(asctime)s] [%(levelname)s\t| %(filename)s:%(li
 
 # handler 생성 (stream, file)
 streamHandler = logging.StreamHandler()
-fileHandler = logging.FileHandler('./tradingbot.log')
+fileHandler = logging.FileHandler('./coin_tradingbot.log')
 
 # logger instance에 fomatter 설정
 streamHandler.setFormatter(formatter)
