@@ -1,10 +1,12 @@
 # from openpyxl import Workbook
 import openpyxl
 import os.path
-
+from slacker import Slacker
 from openpyxl.workbook.workbook import Workbook
 
-xlsx_file = './Auto_Trading_Bot.xlsx'
+dirname = os.path.dirname(__file__)
+
+xlsx_file = './Coin_Auto_Trading_Bot.xlsx'
 sheet = 'trading_bot_revenue'
 # workbook 생성 (덮어쓰기)
 # write_wb = Workbook()
@@ -48,18 +50,5 @@ write_ws['E1'] = '수익률(%)'   # revenue_rate
 # 저장
 # write_wb.save('./Auto_Trading_Bot.xlsx')
 
-def dbgout(message):
-    """인자로 받은 문자열을 파이썬 셸과 슬랙으로 동시에 출력한다."""
-    print(datetime.now().strftime('[%m/%d %H:%M:%S]'), message)
-    strbuf = datetime.now().strftime('[%m/%d %H:%M:%S] ') + message
-    slack.chat.post_message('#python-trading-bot', strbuf)
-
-def printlog(message, *args):
-    """인자로 받은 문자열을 파이썬 셸에 출력한다."""
-    tmp_msg = message
-    for text in args:
-        tmp_msg += str(text)
-    logger.info(tmp_msg)
-    #print(datetime.now().strftime('[%m/%d %H:%M:%S]'), message, *args)
 
     
