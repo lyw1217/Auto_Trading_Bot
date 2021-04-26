@@ -3,6 +3,7 @@ import os
 from slacker import Slacker
 import time
 import datetime
+import requests
 
 dirname = os.path.dirname(__file__)
 
@@ -17,6 +18,13 @@ with open(os.path.join(dirname, '../file/slack_key.txt'), 'r') as file:
     slack_key = file.read().rstrip('\n')
     slack = Slacker(slack_key)
 
+def post_message(token, channel, text):
+    """슬랙 메시지 전송"""
+    response = requests.post("https://slack.com/api/chat.postMessage",
+        headers={"Authorization": "Bearer "+token},
+        data={"channel": channel,"text": text}
+    )
+
 def get_target_price(ticker, k):
     """변동성 돌파 전략으로 매수 목표가 조회"""
     df = pyupbit.get_ohlcv(ticker, interval="day", count=2)
@@ -29,6 +37,12 @@ def get_start_time(ticker):
     df = pyupbit.get_ohlcv(ticker, interval="day", count=1)
     start_time = df.index[0]
     return start_time
+
+def get_ma15(ticker):
+    """15일 이동 평균선 조회"""
+    df = pyupbit.get_ohlcv(ticker, interval="day", count=15)
+    ma15 = df['close'].rolling(15).mean().iloc[-1]
+    return ma15
 
 def get_balance(ticker):
     """잔고 조회"""
@@ -47,6 +61,8 @@ def get_current_price(ticker):
 # 로그인
 upbit = pyupbit.Upbit(access_key, secret_key)
 print("autotrade start")
+# 시작 메세지 슬랙 전송
+post_message(slack_key,"#crypto", "autotrade start")
 
 # 자동매매 시작
 while True:
