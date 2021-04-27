@@ -4,6 +4,7 @@ from slacker import Slacker
 import time
 import datetime
 import requests
+from logger import logger
 
 dirname = os.path.dirname(__file__)
 
@@ -18,12 +19,26 @@ with open(os.path.join(dirname, '../file/slack_key.txt'), 'r') as file:
     slack_key = file.read().rstrip('\n')
     slack = Slacker(slack_key)
 
-def post_message(token, channel, text):
+def printlog(message, *args):
+    """인자로 받은 문자열을 파이썬 셸에 출력한다."""
+    tmp_msg = message
+    for text in args:
+        tmp_msg += str(text)
+    logger.info(tmp_msg)
+    #print(datetime.now().strftime('[%m/%d %H:%M:%S]'), message, *args)
+
+def dbout(message):
     """슬랙 메시지 전송"""
+    '''
     response = requests.post("https://slack.com/api/chat.postMessage",
         headers={"Authorization": "Bearer "+token},
         data={"channel": channel,"text": text}
     )
+    '''
+    """인자로 받은 문자열을 파이썬 셸과 슬랙으로 동시에 출력한다."""
+    print(datetime.now().strftime('[%m/%d %H:%M:%S]'), message)
+    strbuf = datetime.now().strftime('[%m/%d %H:%M:%S] ') + message
+    slack.chat.post_message('#python-trading-bot', strbuf)
 
 def get_target_price(ticker, k):
     """변동성 돌파 전략으로 매수 목표가 조회"""
@@ -62,7 +77,7 @@ def get_current_price(ticker):
 upbit = pyupbit.Upbit(access_key, secret_key)
 print("autotrade start")
 # 시작 메세지 슬랙 전송
-post_message(slack_key,"#crypto", "autotrade start")
+dbout("autotrade start")
 
 # 자동매매 시작
 while True:
