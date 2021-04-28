@@ -2,7 +2,7 @@ import pyupbit
 import os
 from slacker import Slacker
 import time
-import datetime
+from datetime import datetime
 import requests
 from logger import logger
 
@@ -19,6 +19,15 @@ with open(os.path.join(dirname, '../file/slack_key.txt'), 'r') as file:
     slack_key = file.read().rstrip('\n')
     slack = Slacker(slack_key)
 
+def dbout(message, *args):
+    """인자로 받은 문자열을 파이썬 셸과 슬랙으로 동시에 출력한다."""
+    tmp_msg = message
+    for text in args:
+        tmp_msg += str(text)
+    print(datetime.now().strftime('[%m/%d %H:%M:%S]'), tmp_msg)
+    strbuf = datetime.now().strftime('[%m/%d %H:%M:%S] ') + tmp_msg
+    slack.chat.post_message('#python-trading-bot', strbuf)
+
 def printlog(message, *args):
     """인자로 받은 문자열을 파이썬 셸에 출력한다."""
     tmp_msg = message
@@ -26,19 +35,6 @@ def printlog(message, *args):
         tmp_msg += str(text)
     logger.info(tmp_msg)
     #print(datetime.now().strftime('[%m/%d %H:%M:%S]'), message, *args)
-
-def dbout(message):
-    """슬랙 메시지 전송"""
-    '''
-    response = requests.post("https://slack.com/api/chat.postMessage",
-        headers={"Authorization": "Bearer "+token},
-        data={"channel": channel,"text": text}
-    )
-    '''
-    """인자로 받은 문자열을 파이썬 셸과 슬랙으로 동시에 출력한다."""
-    print(datetime.now().strftime('[%m/%d %H:%M:%S]'), message)
-    strbuf = datetime.now().strftime('[%m/%d %H:%M:%S] ') + message
-    slack.chat.post_message('#python-trading-bot', strbuf)
 
 def get_target_price(ticker, k):
     """변동성 돌파 전략으로 매수 목표가 조회"""
@@ -78,7 +74,7 @@ upbit = pyupbit.Upbit(access_key, secret_key)
 print("autotrade start")
 # 시작 메세지 슬랙 전송
 dbout("autotrade start")
-
+'''
 # 자동매매 시작
 while True:
     try:
@@ -89,8 +85,9 @@ while True:
         # 09:00:00 < 현재 시간 < 08:59:50 (hh:mm:ss)
         if start_time < now < end_time - datetime.timedelta(seconds=10):        # 8시 59분 50초
             target_price = get_target_price("KRW-BTC", 0.5)
+            ma15 = get_ma15("KRW-BTC")
             current_price = get_current_price("KRW-BTC")
-            if target_price < current_price:
+            if target_price < current_price and ma15 < current_price:
                 krw = get_balance("KRW")
                 if krw > 5000:
                     upbit.buy_market_order("KRW-BTC", krw*0.9995)       # 수수료 고려 0.9995 (99.95%)
@@ -102,3 +99,4 @@ while True:
     except Exception as e:
         print(e)
         time.sleep(1)
+'''
