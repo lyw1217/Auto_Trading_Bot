@@ -49,11 +49,17 @@ def get_start_time(ticker):
     start_time = df.index[0]
     return start_time
 
-def get_ma15(ticker):
-    """15일 이동 평균선 조회"""
-    df = pyupbit.get_ohlcv(ticker, interval="day", count=15)
-    ma15 = df['close'].rolling(15).mean().iloc[-1]
-    return ma15
+def get_ma_day(ticker, day):
+    """day일 이동 평균선 조회"""
+    df = pyupbit.get_ohlcv(ticker, interval="day", count=int(day))
+    ma = df['close'].rolling(int(day)).mean().iloc[-1]
+    return ma
+
+def get_ma_min(ticker, min):
+    """min분 이동 평균선 조회"""
+    df = pyupbit.get_ohlcv(ticker, interval="min", count=int(min))
+    ma5 = df['close'].rolling(int(min)).mean().iloc[-1]
+    return ma5
 
 def get_balance(ticker):
     """잔고 조회"""
@@ -71,10 +77,11 @@ def get_current_price(ticker):
 
 # 로그인
 upbit = pyupbit.Upbit(access_key, secret_key)
-print("autotrade start")
-# 시작 메세지 슬랙 전송
-dbout("autotrade start")
-'''
+# 시작 메세지
+#dbout("autotrade start")
+
+print(get_ma_min("KRW-ETH", 5))
+
 # 자동매매 시작
 while True:
     try:
@@ -99,4 +106,3 @@ while True:
     except Exception as e:
         print(e)
         time.sleep(1)
-'''
