@@ -57,52 +57,90 @@ def get_ma_day(ticker, day):
 
 def get_ma_min(ticker, min):
     """min분 이동 평균선 조회"""
-    df = pyupbit.get_ohlcv(ticker, interval="min", count=int(min))
+    df = pyupbit.get_ohlcv(ticker, interval="minute30", count=int(min))
     ma5 = df['close'].rolling(int(min)).mean().iloc[-1]
     return ma5
 
 def get_balance(ticker):
     """잔고 조회"""
     balances = upbit.get_balances()
+
     for b in balances:
         if b['currency'] == ticker:
             if b['balance'] is not None:
                 return float(b['balance'])
             else:
                 return 0
+    
 
 def get_current_price(ticker):
     """현재가 조회"""
     return pyupbit.get_orderbook(tickers=ticker)[0]["orderbook_units"][0]["ask_price"]
+
+def get_slope_min(ma_old, min):
+    """ 이전 값과 비교, 새로운 조회값이 더 크면 양수 """
+    ma_new = get_ma_min("KRW-ETH", min)
+
+    if (ma_old - ma_new) < 0 :
+        return 1
+    else :
+        return (-1)
+
+def get_min_order_amount(ticker):
+    price = get_current_price(ticker)
+
+    return (5000 / price)
 
 # 로그인
 upbit = pyupbit.Upbit(access_key, secret_key)
 # 시작 메세지
 #dbout("autotrade start")
 
-print(get_ma_min("KRW-ETH", 5))
+ma15_old = get_ma_min("KRW-ETH", 15)
+ma50_old = get_ma_min("KRW-ETH", 50)
+ma15_slope = 0
+
+buy_state = False
+buy_flag = False
+sell_flag = False
 
 # 자동매매 시작
 while True:
     try:
-        now = datetime.datetime.now()
-        start_time = get_start_time("KRW-BTC")
-        end_time = start_time + datetime.timedelta(days=1)      # 시작 시간에서 1일을 더해준 값
+        ma15_slope = get_slope_min(ma15_old, 15)
+        ma15_new = get_ma_min("KRW-ETH", 15)
+        ma50_new = get_ma_min("KRW-ETH", 50)
 
-        # 09:00:00 < 현재 시간 < 08:59:50 (hh:mm:ss)
-        if start_time < now < end_time - datetime.timedelta(seconds=10):        # 8시 59분 50초
-            target_price = get_target_price("KRW-BTC", 0.5)
-            ma15 = get_ma15("KRW-BTC")
-            current_price = get_current_price("KRW-BTC")
-            if target_price < current_price and ma15 < current_price:
-                krw = get_balance("KRW")
-                if krw > 5000:
-                    upbit.buy_market_order("KRW-BTC", krw*0.9995)       # 수수료 고려 0.9995 (99.95%)
-        else:
-            btc = get_balance("BTC")
-            if btc > 0.00008:
-                upbit.sell_market_order("KRW-BTC", btc*0.9995)
+        #print ( "ma15_old : %s, ma15_new : %s , ma50_old : %s , ma50_new : %s"%(ma15_old,ma15_new,ma50_old,ma50_new))
+
+        if  (buy_state == False) and (ma15_old < ma50_old) and (ma15_new >= ma50_new) :
+            buy_flag = True
+        elif (buy_state == True) and (ma15_old > ma50_old) and (ma15_new <= ma50_new) :
+            sell_flag = True
+
+        ma15_old = ma15_new
+        ma50_old = ma50_new
+
+        if (ma15_slope > 0) and (buy_flag == True) and (buy_state == False) :       # 기울기 양수, ma15의 상승으로 인해 ma50과 교차 시
+            krw = upbit.get_balance("KRW")
+            if krw > 5000:
+                upbit.buy_market_order("KRW-ETH", krw*0.9995)       # 수수료 고려 0.9995 (99.95%)
+                buy_state = True
+                buy_flag = False
+                dbout("BUY!! 구매금액 : " + krw)
+
+        elif (sell_flag == True) and (buy_state == True):
+            eth = upbit.get_balance("ETH")
+            krw = upbit.get_balance("KRW")
+            min_amount = get_min_order_amount("KRW-ETH")
+            if eth > min_amount :
+                upbit.sell_market_order("KRW-ETH", eth*0.9995)
+                buy_state = False
+                sell_flag = False
+                dbout("SELL!! 잔고 : " + krw)
+
         time.sleep(1)
+
     except Exception as e:
-        print(e)
+        dbout(e)
         time.sleep(1)
