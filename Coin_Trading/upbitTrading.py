@@ -113,6 +113,7 @@ else:
 # 자동매매 시작
 while True:
     try:
+        time.sleep(1)
         ma15_slope  = get_slope_min(ma15_old, 15)
         ma15_new    = get_ma_min("KRW-ETH", 15)
         ma50_new    = get_ma_min("KRW-ETH", 50)
@@ -151,8 +152,6 @@ while True:
                 sell_flag   = False
                 krw       = upbit.get_balance("KRW")
                 dbout("SELL!! 잔고 : " + str(krw))
-
-        time.sleep(1)
 
     except Exception as e:
         dbout(e)
