@@ -4,7 +4,7 @@ from slacker import Slacker
 import time
 from datetime import datetime
 import requests
-from logger import logger
+#from logger import logger
 
 dirname = os.path.dirname(__file__)
 
@@ -33,7 +33,7 @@ def printlog(message, *args):
     tmp_msg = message
     for text in args:
         tmp_msg += str(text)
-    logger.info(tmp_msg)
+    ##logger.info(tmp_msg)
     #print(datetime.now().strftime('[%m/%d %H:%M:%S]'), message, *args)
 
 def get_target_price(ticker, k):
@@ -94,50 +94,63 @@ def get_min_order_amount(ticker):
 # 로그인
 upbit = pyupbit.Upbit(access_key, secret_key)
 # 시작 메세지
-#dbout("autotrade start")
+dbout("autotrade start")
 
-ma15_old = get_ma_min("KRW-ETH", 15)
-ma50_old = get_ma_min("KRW-ETH", 50)
-ma15_slope = 0
+ma15_old    = get_ma_min("KRW-ETH", 15)
+ma50_old    = get_ma_min("KRW-ETH", 50)
+ma15_slope  = 0
 
-buy_state = False
-buy_flag = False
-sell_flag = False
+eth         = upbit.get_balance("ETH")
+min_amount  = get_min_order_amount("KRW-ETH")
+buy_flag    = False
+sell_flag   = False
+send_cnt    = 0
+if eth > min_amount :
+    buy_state = True
+else:
+    buy_state = False
 
 # 자동매매 시작
 while True:
     try:
-        ma15_slope = get_slope_min(ma15_old, 15)
-        ma15_new = get_ma_min("KRW-ETH", 15)
-        ma50_new = get_ma_min("KRW-ETH", 50)
+        ma15_slope  = get_slope_min(ma15_old, 15)
+        ma15_new    = get_ma_min("KRW-ETH", 15)
+        ma50_new    = get_ma_min("KRW-ETH", 50)
 
-        #print ( "ma15_old : %s, ma15_new : %s , ma50_old : %s , ma50_new : %s"%(ma15_old,ma15_new,ma50_old,ma50_new))
+        t_now       = datetime.now()
+        if (t_now.minute % 30 == 0) and (send_cnt == 0) :
+            dbout("ma_slope : %s, ma15_old : %s, ma15_new : %s , ma50_old : %s , ma50_new : %s"%(ma15_slope,ma15_old,ma15_new,ma50_old,ma50_new))
+            send_cnt = 1
+        else :
+            if (t_now.minute == 59) or (t_now.minute == 29):
+                send_cnt = 0
+            continue
 
         if  (buy_state == False) and (ma15_old < ma50_old) and (ma15_new >= ma50_new) :
             buy_flag = True
         elif (buy_state == True) and (ma15_old > ma50_old) and (ma15_new <= ma50_new) :
             sell_flag = True
 
-        ma15_old = ma15_new
-        ma50_old = ma50_new
+        ma15_old    = ma15_new
+        ma50_old    = ma50_new
 
         if (ma15_slope > 0) and (buy_flag == True) and (buy_state == False) :       # 기울기 양수, ma15의 상승으로 인해 ma50과 교차 시
             krw = upbit.get_balance("KRW")
             if krw > 5000:
                 upbit.buy_market_order("KRW-ETH", krw*0.9995)       # 수수료 고려 0.9995 (99.95%)
                 buy_state = True
-                buy_flag = False
-                dbout("BUY!! 구매금액 : " + krw)
+                buy_flag    = False
+                dbout("BUY!! 매수금액 : " + str(krw))
 
         elif (sell_flag == True) and (buy_state == True):
-            eth = upbit.get_balance("ETH")
-            krw = upbit.get_balance("KRW")
+            eth        = upbit.get_balance("ETH")
             min_amount = get_min_order_amount("KRW-ETH")
             if eth > min_amount :
                 upbit.sell_market_order("KRW-ETH", eth*0.9995)
                 buy_state = False
-                sell_flag = False
-                dbout("SELL!! 잔고 : " + krw)
+                sell_flag   = False
+                krw       = upbit.get_balance("KRW")
+                dbout("SELL!! 잔고 : " + str(krw))
 
         time.sleep(1)
 
