@@ -24,8 +24,8 @@ def dbout(message, *args):
     tmp_msg = message
     for text in args:
         tmp_msg += str(text)
-    print(datetime.now().strftime('[%m/%d %H:%M:%S]'), tmp_msg)
     strbuf = datetime.now().strftime('[%m/%d %H:%M:%S] ') + tmp_msg
+    print(strbuf)
     slack.chat.post_message('#python-trading-bot', strbuf)
 
 def printlog(message, *args):
@@ -120,13 +120,13 @@ while True:
 
         t_now       = datetime.now()
         if (t_now.minute % 6 == 0) and (send_cnt == 0) :
-            if (t_now.minute % 36 == 0) :
+            if (t_now.minute == 36) :
                 eth         = upbit.get_balance("ETH")
                 krw         = upbit.get_balance("KRW")
                 if krw < 5000 :
-                    dbout("eth : %.0f, ma_slope : %s, ma15_old : %.3f\n ma15_new : %.3f , ma50_old : %.3f , ma50_new : %.3f"%(float(eth)*get_current_price("KRW-ETH"), ma15_slope, float(ma15_old), float(ma15_new), float(ma50_old), float(ma50_new)))
+                    dbout("eth : %.0f, ma_slope : %s\nma15_old : %.0f , ma15_new : %.0f\nma50_old : %.0f , ma50_new : %.0f"%(float(eth)*get_current_price("KRW-ETH"), ma15_slope, float(ma15_old), float(ma15_new), float(ma50_old), float(ma50_new)))
                 else :
-                    dbout("krw : %.0f, ma_slope : %s, ma15_old : %.3f\n ma15_new : %.3f , ma50_old : %.3f , ma50_new : %.3f"%(float(krw), ma15_slope, float(ma15_old), float(ma15_new), float(ma50_old), float(ma50_new)))
+                    dbout("krw : %.0f, ma_slope : %s\nma15_old : %.0f , ma15_new : %.0f\nma50_old : %.0f , ma50_new : %.0f"%(float(krw), ma15_slope, float(ma15_old), float(ma15_new), float(ma50_old), float(ma50_new)))
             send_cnt = 1
         else :
             if (t_now.minute % 6 == 5) :
