@@ -120,8 +120,8 @@ while True:
 
         t_now       = datetime.now()
         if (t_now.minute % 6 == 0) and (send_cnt == 0) :
-            if (t_now.minute % 30 == 0) :
-                dbout("ma_slope : %s, ma15_old : %s, ma15_new : %s , ma50_old : %s , ma50_new : %s"%(ma15_slope,ma15_old,ma15_new,ma50_old,ma50_new))
+            if (t_now.minute % 36 == 0) :
+                dbout("ma_slope : %s, ma15_old : %.3f, ma15_new : %.3f , ma50_old : %.3f , ma50_new : %.3f"%(ma15_slope, float(ma15_old), float(ma15_new), float(ma50_old), float(ma50_new)))
             send_cnt = 1
         else :
             if (t_now.minute % 6 == 5) :
