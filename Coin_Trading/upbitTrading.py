@@ -119,11 +119,12 @@ while True:
         ma50_new    = get_ma_min("KRW-ETH", 50)
 
         t_now       = datetime.now()
-        if (t_now.minute % 30 == 0) and (send_cnt == 0) :
-            dbout("ma_slope : %s, ma15_old : %s, ma15_new : %s , ma50_old : %s , ma50_new : %s"%(ma15_slope,ma15_old,ma15_new,ma50_old,ma50_new))
+        if (t_now.minute % 6 == 0) and (send_cnt == 0) :
+            if (t_now.minute % 30 == 0) :
+                dbout("ma_slope : %s, ma15_old : %s, ma15_new : %s , ma50_old : %s , ma50_new : %s"%(ma15_slope,ma15_old,ma15_new,ma50_old,ma50_new))
             send_cnt = 1
         else :
-            if (t_now.minute == 59) or (t_now.minute == 29):
+            if (t_now.minute % 6 == 5) :
                 send_cnt = 0
             continue
 
@@ -139,7 +140,7 @@ while True:
             krw = upbit.get_balance("KRW")
             if krw > 5000:
                 upbit.buy_market_order("KRW-ETH", krw*0.9995)       # 수수료 고려 0.9995 (99.95%)
-                buy_state = True
+                buy_state   = True
                 buy_flag    = False
                 dbout("BUY!! 매수금액 : " + str(krw))
 
@@ -148,8 +149,9 @@ while True:
             min_amount = get_min_order_amount("KRW-ETH")
             if eth > min_amount :
                 upbit.sell_market_order("KRW-ETH", eth*0.9995)
-                buy_state = False
+                buy_state   = False
                 sell_flag   = False
+                time.sleep(10)
                 krw       = upbit.get_balance("KRW")
                 dbout("SELL!! 잔고 : " + str(krw))
 
