@@ -4,6 +4,7 @@ from slacker import Slacker
 import time
 from datetime import datetime
 import requests
+from CoinTradeUtil import write_ws, write_wb
 #from logger import logger
 
 dirname = os.path.dirname(__file__)
@@ -147,7 +148,10 @@ while True:
                 upbit.buy_market_order("KRW-ETH", krw*0.9995)       # 수수료 고려 0.9995 (99.95%)
                 buy_state   = True
                 buy_flag    = False
-                dbout("BUY!! 매수금액 : " + str(krw))
+                dbout("BUY!! 매수금액 : " + str(krw*0.9995))
+                # 엑셀 출력
+                write_ws.append( [datetime.now().strftime('%m/%d %H:%M:%S'), "BUY", krw*0.9995, ma15_new, ma50_new] )
+                write_wb.save('./Coin_Trading_Bot.xlsx')
 
         elif (sell_flag == True) and (buy_state == True):
             eth        = upbit.get_balance("ETH")
@@ -159,6 +163,9 @@ while True:
                 time.sleep(10)
                 krw       = upbit.get_balance("KRW")
                 dbout("SELL!! 잔고 : " + str(krw))
+                # 엑셀 출력
+                write_ws.append( [datetime.now().strftime('%m/%d %H:%M:%S'), "SELL", krw, ma15_new, ma50_new] )
+                write_wb.save('./Coin_Trading_Bot.xlsx')
 
     except Exception as e:
         dbout(e)
