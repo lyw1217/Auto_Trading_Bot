@@ -4,21 +4,9 @@ from slacker import Slacker
 import time
 from datetime import datetime
 import requests
+import multiprocessing
 from CoinTradeUtil import write_ws, write_wb
 #from logger import logger
-
-dirname = os.path.dirname(__file__)
-
-# access_key key 가져오기
-with open(os.path.join(dirname, '../file/upbit_aces_key.txt'), 'r') as file:
-        access_key = file.read().rstrip('\n')
-# security key 가져오기
-with open(os.path.join(dirname, '../file/upbit_sec_key.txt'), 'r') as file:
-        secret_key = file.read().rstrip('\n')
-# slack_key 가져오기
-with open(os.path.join(dirname, '../file/slack_key.txt'), 'r') as file:
-    slack_key = file.read().rstrip('\n')
-    slack = Slacker(slack_key)
 
 def dbout(message, *args):
     """인자로 받은 문자열을 파이썬 셸과 슬랙으로 동시에 출력한다."""
@@ -78,9 +66,9 @@ def get_current_price(ticker):
     """현재가 조회"""
     return pyupbit.get_orderbook(tickers=ticker)[0]["orderbook_units"][0]["ask_price"]
 
-def get_slope_min(ma_old, min):
+def get_slope_min(ticker, ma_old, min):
     """ 이전 값과 비교, 새로운 조회값이 더 크면 양수 """
-    ma_new = get_ma_min("KRW-ETH", min)
+    ma_new = get_ma_min(ticker, min)
 
     if (ma_old - ma_new) < 0 :
         return 1
@@ -92,81 +80,160 @@ def get_min_order_amount(ticker):
 
     return (5000 / price)
 
-# 로그인
-upbit = pyupbit.Upbit(access_key, secret_key)
-# 시작 메세지
-dbout("autotrade start")
 
-ma15_old    = get_ma_min("KRW-ETH", 15)
-ma50_old    = get_ma_min("KRW-ETH", 50)
-ma15_slope  = 0
 
-eth         = upbit.get_balance("ETH")
-min_amount  = get_min_order_amount("KRW-ETH")
-buy_flag    = False
-sell_flag   = False
-send_cnt    = 0
-if eth > min_amount :
-    buy_state = True
-else:
-    buy_state = False
+lock = multiprocessing.Lock()
 
-# 자동매매 시작
-while True:
-    try:
-        time.sleep(1)
-        ma15_slope  = get_slope_min(ma15_old, 15)
-        ma15_new    = get_ma_min("KRW-ETH", 15)
-        ma50_new    = get_ma_min("KRW-ETH", 50)
+def trade_start(ticker) :
+    ''' 
+    ticker 거래 시작, worker 함수
+    example > ticker = "KRW-ETH"
+    '''
 
-        t_now       = datetime.now()
-        if (t_now.minute % 6 == 0) and (send_cnt == 0) :
-            if (t_now.minute == 36) :
-                eth         = upbit.get_balance("ETH")
-                krw         = upbit.get_balance("KRW")
-                if krw < 5000 :
-                    dbout("eth : %.0f, ma_slope : %s\nma15_old : %.0f , ma15_new : %.0f\nma50_old : %.0f , ma50_new : %.0f"%(float(eth)*get_current_price("KRW-ETH"), ma15_slope, float(ma15_old), float(ma15_new), float(ma50_old), float(ma50_new)))
-                else :
-                    dbout("krw : %.0f, ma_slope : %s\nma15_old : %.0f , ma15_new : %.0f\nma50_old : %.0f , ma50_new : %.0f"%(float(krw), ma15_slope, float(ma15_old), float(ma15_new), float(ma50_old), float(ma50_new)))
-            send_cnt = 1
-        else :
-            if (t_now.minute % 6 == 5) :
-                send_cnt = 0
+    lock.acquire()
+    time.sleep(len(ticker_list)-1)        # 1초에 1개의 ticker만 시작되게끔 Lock, sleep
+    lock.release()
+
+    while True :
+        ma15_old    = get_ma_min(ticker, 15)
+        ma50_old    = get_ma_min(ticker, 50)
+        min_amount  = get_min_order_amount(ticker)
+        if ma15_old == None or ma50_old == None or min_amount == None :
+            time.sleep(1)
             continue
+        break
 
-        if  (buy_state == False) and (ma15_old < ma50_old) and (ma15_new >= ma50_new) :
-            buy_flag = True
-        elif (buy_state == True) and (ma15_old > ma50_old) and (ma15_new <= ma50_new) :
-            sell_flag = True
+    amount = upbit.get_balance(ticker[4:])
+    if amount == None :
+        amount = 0
 
-        ma15_old    = ma15_new
-        ma50_old    = ma50_new
+    ticker_amount = 0   # 원 단위 ticker 별 관리 금액
+    ma15_slope    = 0
+    buy_flag      = False
+    sell_flag     = False
+    send_cnt      = 0
+    if amount > min_amount :
+        buy_state = True
+        ticker_amount = amount * get_current_price(ticker)   
+    else:
+        buy_state = False
+        # 다른 ticker 들과 비슷한 수준의 금액으로 amount 맞추기
+        total_amount = int(upbit.get_balance("KRW"))
 
-        if (ma15_slope > 0) and (buy_flag == True) and (buy_state == False) :       # 기울기 양수, ma15의 상승으로 인해 ma50과 교차 시
-            krw = upbit.get_balance("KRW")
-            if krw > 5000:
-                upbit.buy_market_order("KRW-ETH", krw*0.9995)       # 수수료 고려 0.9995 (99.95%)
-                buy_state   = True
-                buy_flag    = False
-                dbout("BUY!! 매수금액 : " + str(krw*0.9995))
-                # 엑셀 출력
-                write_ws.append( [datetime.now().strftime('%m/%d %H:%M:%S'), "BUY", krw*0.9995, ma15_new, ma50_new] )
-                write_wb.save('./Coin_Trading_Bot.xlsx')
+        for t in ticker_list :
+            total_amount = total_amount + int(float(upbit.get_balance(t[4:])) * float(get_current_price(t)))
+        
+        ticker_amount = int(total_amount / len(ticker_list))    # 전체 ticker들 자산의 1/n
 
-        elif (sell_flag == True) and (buy_state == True):
-            eth        = upbit.get_balance("ETH")
-            min_amount = get_min_order_amount("KRW-ETH")
-            if eth > min_amount :
-                upbit.sell_market_order("KRW-ETH", eth*0.9995)
-                buy_state   = False
-                sell_flag   = False
-                time.sleep(10)
-                krw       = upbit.get_balance("KRW")
-                dbout("SELL!! 잔고 : " + str(krw))
-                # 엑셀 출력
-                write_ws.append( [datetime.now().strftime('%m/%d %H:%M:%S'), "SELL", krw, ma15_new, ma50_new] )
-                write_wb.save('./Coin_Trading_Bot.xlsx')
+    dbout(str(ticker) + " autotrade start")
 
-    except Exception as e:
-        dbout(e)
-        time.sleep(1)
+    # 자동매매 시작
+    while True:
+        try:
+            time.sleep(len(ticker_list))    # 1초에 1개의 ticker만 시작되게끔 sleep
+
+            ma15_slope  = get_slope_min(ticker, ma15_old, 15)
+            ma15_new    = get_ma_min(ticker, 15)
+            ma50_new    = get_ma_min(ticker, 50)
+
+            if ma15_slope == None or ma15_new == None or ma50_new == None :
+                continue
+
+            t_now = datetime.now()
+            if (t_now.minute % 6 == 0) and (send_cnt == 0) :
+                if (t_now.minute == 36) :
+                    amount      = upbit.get_balance(ticker[4:])
+                    krw         = upbit.get_balance("KRW")
+                    if krw < 5000 :
+                        dbout("%s : %.0f, ma_slope : %s\nma15_old : %.0f , ma15_new : %.0f\nma50_old : %.0f , ma50_new : %.0f"%(ticker, (float(amount) * get_current_price(ticker)), ma15_slope, float(ma15_old), float(ma15_new), float(ma50_old), float(ma50_new)))
+                    else :
+                        dbout("%s krw : %.0f, ma_slope : %s\nma15_old : %.0f , ma15_new : %.0f\nma50_old : %.0f , ma50_new : %.0f"%(ticker, float(krw), ma15_slope, float(ma15_old), float(ma15_new), float(ma50_old), float(ma50_new)))
+                send_cnt = 1
+            else :
+                if (t_now.minute % 6 == 5) :
+                    send_cnt = 0
+                continue
+
+            if  (buy_state == False) and (ma15_old < ma50_old) and (ma15_new >= ma50_new) :
+                buy_flag = True
+            elif (buy_state == True) and (ma15_old > ma50_old) and (ma15_new <= ma50_new) :
+                sell_flag = True
+
+            ma15_old    = ma15_new
+            ma50_old    = ma50_new
+
+            if (ma15_slope > 0) and (buy_flag == True) and (buy_state == False) :       # 기울기 양수, ma15의 상승으로 인해 ma50과 교차 시
+                krw = upbit.get_balance("KRW")
+                if krw == None :
+                    continue
+                if krw >= ticker_amount and krw > 5000 :
+                    upbit.buy_market_order(ticker, ticker_amount*0.9995)       # 저장된 매도 금액 만큼 매수, 수수료 고려 0.9995 (99.95%)
+                    buy_state   = True
+                    buy_flag    = False
+                    dbout("BUY!! 매수금액 : " + str(krw*0.9995))
+                    # 엑셀 출력
+                    write_ws.append( [datetime.now().strftime('%m/%d %H:%M:%S'), ticker, "BUY", krw*0.9995, ma15_new, ma50_new] )
+                    write_wb.save('./Coin_Trading_Bot.xlsx')
+                else :
+                    dbout("Failed BUY. krw is '%.0f', but ticker_amount = '%d'"%(float(krw*0.9995), ticker_amount))
+
+            elif (sell_flag == True) and (buy_state == True):
+                amount     = upbit.get_balance(ticker[4:])
+                min_amount = get_min_order_amount(ticker)
+                if amount == None or min_amount == None :
+                    continue
+                if amount > min_amount :
+                    upbit.sell_market_order(ticker, amount*0.9995)             # 보유 수량 전부 매도
+                    buy_state   = False
+                    sell_flag   = False
+                    time.sleep(10)  # 매도 금액 반영될 때까지 sleep
+                    krw = upbit.get_balance("KRW")
+                    if krw == None or krw < 5000 :
+                        time.sleep(1)
+                        krw = upbit.get_balance("KRW")
+                    dbout("SELL!! 잔고 : %.0f" % float(krw))
+                    ticker_amount = krw     # 매도 금액 저장
+                    # 엑셀 출력
+                    write_ws.append( [datetime.now().strftime('%m/%d %H:%M:%S'), ticker, "SELL", krw, ma15_new, ma50_new] )
+                    write_wb.save('./Coin_Trading_Bot.xlsx')
+                else :
+                    dbout("Failed SELL. %s is '%.0f'"%(ticker, float(amount*0.9995)))
+
+        except Exception as e:
+            dbout("Err! ", e)
+            time.sleep(1)
+
+    return
+
+ticker_list = ['KRW-BTC', 'KRW-ETH']
+
+if __name__ == '__main__' :
+    dirname = os.path.dirname(__file__)
+
+    # access_key key 가져오기
+    with open(os.path.join(dirname, '../file/upbit_aces_key.txt'), 'r') as file:
+        access_key = file.read().rstrip('\n')
+    # security key 가져오기
+    with open(os.path.join(dirname, '../file/upbit_sec_key.txt'), 'r') as file:
+        secret_key = file.read().rstrip('\n')
+    # slack_key 가져오기
+    with open(os.path.join(dirname, '../file/slack_key.txt'), 'r') as file:
+        slack_key = file.read().rstrip('\n')
+        slack     = Slacker(slack_key)
+        
+    # 로그인
+    global upbit
+    upbit = pyupbit.Upbit(access_key, secret_key)
+    # 시작 메세지
+    dbout("A U T O T R A D E !")
+
+    t_str = ""
+    for t in ticker_list :
+        t_str = t_str + t + " "
+    dbout("tickers = " + t_str)
+
+    multiprocessing.freeze_support()
+    pool = multiprocessing.Pool(processes=len(ticker_list))
+    results = pool.map(trade_start, ticker_list)
+    pool.close()
+    pool.join()

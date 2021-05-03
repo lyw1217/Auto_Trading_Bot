@@ -33,10 +33,11 @@ else :
 # 작업할 workbook 내 sheet 활성화
 #write_ws = write_ws.active
 write_ws['A1'] = '날짜'
-write_ws['B1'] = '구분'     # total_cash
-write_ws['C1'] = '매수금액'  # end_cash
-write_ws['D1'] = 'MA15'    # revenue_cash
-write_ws['E1'] = 'MA50' # revenue_rate
+write_ws['B1'] = '티커'     # 암호화폐 구분
+write_ws['C1'] = '구분'     # 매도, 매수 구분
+write_ws['D1'] = '매수금액'  # 매수 금액
+write_ws['E1'] = 'MA15'    # 15 이동평균선
+write_ws['F1'] = 'MA50'    # 50 이동평균선
 
 # 행 단위 추가
 # write_ws.append( [4, 5, 6] )
