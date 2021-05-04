@@ -16,7 +16,9 @@ echo ""
 echo "S T A R T Python Auto COIN Trading Bot in background"
 echo ""
 
-nohup python3 upbitTrading.py >> output.log &
+NOW=$(date "+%y%d%m")
+
+nohup python3 upbitTrading.py > coin_${NOW}.log 2>&1 &
 
 sleep 1s
 
