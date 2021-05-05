@@ -167,7 +167,7 @@ def trade_start(ticker) :
                 if krw == None :
                     continue
                 if krw >= ticker_amount and krw > 5000 :
-                    upbit.buy_market_order(ticker, ticker_amount*0.9995)       # 저장된 매도 금액 만큼 매수, 수수료 고려 0.9995 (99.95%)
+                    #upbit.buy_market_order(ticker, ticker_amount*0.9995)       # 저장된 매도 금액 만큼 매수, 수수료 고려 0.9995 (99.95%)
                     buy_state   = True
                     buy_flag    = False
                     dbout("BUY!! 매수금액 : " + str(krw*0.9995))
@@ -183,7 +183,7 @@ def trade_start(ticker) :
                 if amount == None or min_amount == None :
                     continue
                 if amount > min_amount :
-                    upbit.sell_market_order(ticker, amount*0.9995)             # 보유 수량 전부 매도
+                    #upbit.sell_market_order(ticker, amount*0.9995)             # 보유 수량 전부 매도
                     buy_state   = False
                     sell_flag   = False
                     time.sleep(10)  # 매도 금액 반영될 때까지 sleep
@@ -205,25 +205,26 @@ def trade_start(ticker) :
 
     return
 
-ticker_list = ['KRW-BTC', 'KRW-ETH']
+ticker_list = ['KRW-ETH']
+dirname = os.path.dirname(__file__)
+
+# access_key key 가져오기
+with open(os.path.join(dirname, '../file/upbit_aces_key.txt'), 'r') as file:
+    access_key = file.read().rstrip('\n')
+# security key 가져오기
+with open(os.path.join(dirname, '../file/upbit_sec_key.txt'), 'r') as file:
+    secret_key = file.read().rstrip('\n')
+# slack_key 가져오기
+with open(os.path.join(dirname, '../file/slack_key.txt'), 'r') as file:
+    slack_key = file.read().rstrip('\n')
+    slack     = Slacker(slack_key)
+
+# 로그인
+global upbit
+upbit = pyupbit.Upbit(access_key, secret_key)
 
 if __name__ == '__main__' :
-    dirname = os.path.dirname(__file__)
-
-    # access_key key 가져오기
-    with open(os.path.join(dirname, '../file/upbit_aces_key.txt'), 'r') as file:
-        access_key = file.read().rstrip('\n')
-    # security key 가져오기
-    with open(os.path.join(dirname, '../file/upbit_sec_key.txt'), 'r') as file:
-        secret_key = file.read().rstrip('\n')
-    # slack_key 가져오기
-    with open(os.path.join(dirname, '../file/slack_key.txt'), 'r') as file:
-        slack_key = file.read().rstrip('\n')
-        slack     = Slacker(slack_key)
-        
-    # 로그인
-    global upbit
-    upbit = pyupbit.Upbit(access_key, secret_key)
+    
     # 시작 메세지
     dbout("A U T O T R A D E !")
 
