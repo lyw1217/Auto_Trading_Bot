@@ -125,7 +125,7 @@ def trade_start(ticker) :
         
         ticker_amount = int(total_amount / len(ticker_list))    # 전체 ticker들 자산의 1/n
 
-    dbout(str(ticker) + "> autotrade start, ticker_amount = " + ticker_amount)
+    dbout(str(ticker) + "> autotrade start, ticker_amount = " + str(ticker_amount))
 
     # 자동매매 시작
     while True:
@@ -165,7 +165,7 @@ def trade_start(ticker) :
             if (ma15_slope > 0) and (buy_flag == True) and (buy_state == False) :       # 기울기 양수, ma15의 상승으로 인해 ma50과 교차 시
                 krw = upbit.get_balance("KRW")
                 if krw == None or krw < 5000 :
-                    dbout( ticker + " > Match BUY condition, but krw is " + krw)
+                    dbout( ticker + " > Match BUY condition, but krw is " + str(krw))
                     continue
                 if krw >= ticker_amount and krw > 5000 :
                     upbit.buy_market_order(ticker, ticker_amount*0.9995) # 저장된 매도 금액 만큼 매수, 수수료 고려 0.9995 (99.95%)    
