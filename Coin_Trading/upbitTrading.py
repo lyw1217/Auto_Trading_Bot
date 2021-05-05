@@ -17,6 +17,7 @@ def dbout(message, *args):
     print(strbuf)
     slack.chat.post_message('#python-trading-bot', strbuf)
 
+# not used
 def printlog(message, *args):
     """인자로 받은 문자열을 파이썬 셸에 출력한다."""
     tmp_msg = message
@@ -24,35 +25,54 @@ def printlog(message, *args):
         tmp_msg += str(text)
     ##logger.info(tmp_msg)
     #print(datetime.now().strftime('[%m/%d %H:%M:%S]'), message, *args)
+# not used
 
+# not used
 def get_target_price(ticker, k):
     """변동성 돌파 전략으로 매수 목표가 조회"""
     df = pyupbit.get_ohlcv(ticker, interval="day", count=2)
     target_price = df.iloc[0]['close'] + (df.iloc[0]['high'] - df.iloc[0]['low']) * k
     return target_price
+# not used
 
+# not used
 def get_start_time(ticker):
     """시작 시간 조회"""
     # 일봉 조회 시 09시 기준으로 조회
     df = pyupbit.get_ohlcv(ticker, interval="day", count=1)
     start_time = df.index[0]
     return start_time
+# not used
 
+# not used
 def get_ma_day(ticker, day):
     """day일 이동 평균선 조회"""
     df = pyupbit.get_ohlcv(ticker, interval="day", count=int(day))
     ma = df['close'].rolling(int(day)).mean().iloc[-1]
     return ma
+# not used
 
 def get_ma_min(ticker, min):
     """min분 이동 평균선 조회"""
     df = pyupbit.get_ohlcv(ticker, interval="minute30", count=int(min))
+    while True :
+        if df is None :
+            time.sleep(1)
+            df = pyupbit.get_ohlcv(ticker, interval="minute30", count=int(min))
+        else :
+            break
     ma5 = df['close'].rolling(int(min)).mean().iloc[-1]
     return ma5
 
 def get_balance(ticker):
     """잔고 조회"""
     balances = upbit.get_balances()
+    while True :
+        if balances is None :
+            time.sleep(1)
+            balances = upbit.get_balances()
+        else :
+            break
 
     for b in balances:
         if b['currency'] == ticker:
@@ -64,7 +84,14 @@ def get_balance(ticker):
 
 def get_current_price(ticker):
     """현재가 조회"""
-    return pyupbit.get_orderbook(tickers=ticker)[0]["orderbook_units"][0]["ask_price"]
+    orderbook = pyupbit.get_orderbook(tickers=ticker)[0]["orderbook_units"][0]["ask_price"]
+    while True :
+        if orderbook is None :
+            time.sleep(1)
+            orderbook = pyupbit.get_orderbook(tickers=ticker)[0]["orderbook_units"][0]["ask_price"]
+        else :
+            break
+    return orderbook
 
 def get_slope_min(ticker, ma_old, min):
     """ 이전 값과 비교, 새로운 조회값이 더 크면 양수 """
@@ -98,13 +125,13 @@ def trade_start(ticker) :
         ma15_old    = get_ma_min(ticker, 15)
         ma50_old    = get_ma_min(ticker, 50)
         min_amount  = get_min_order_amount(ticker)
-        if ma15_old == None or ma50_old == None or min_amount == None :
+        if ma15_old is None or ma50_old is None or min_amount is None :
             time.sleep(1)
             continue
         break
 
     amount = upbit.get_balance(ticker[4:])
-    if amount == None :
+    if amount is None :
         amount = 0
 
     ticker_amount = 0   # 원 단위 ticker 별 관리 금액
@@ -136,7 +163,7 @@ def trade_start(ticker) :
             ma15_new    = get_ma_min(ticker, 15)
             ma50_new    = get_ma_min(ticker, 50)
 
-            if ma15_slope == None or ma15_new == None or ma50_new == None :
+            if ma15_slope is None or ma15_new is None or ma50_new is None :
                 continue
 
             t_now = datetime.now()
@@ -164,7 +191,7 @@ def trade_start(ticker) :
 
             if (ma15_slope > 0) and (buy_flag == True) and (buy_state == False) :       # 기울기 양수, ma15의 상승으로 인해 ma50과 교차 시
                 krw = upbit.get_balance("KRW")
-                if krw == None or krw < 5000 :
+                if krw is None or krw < 5000 :
                     dbout( ticker + " > Match BUY condition, but krw is " + str(krw))
                     continue
                 if krw >= ticker_amount and krw > 5000 :
@@ -183,7 +210,7 @@ def trade_start(ticker) :
             elif (sell_flag == True) and (buy_state == True):
                 amount     = upbit.get_balance(ticker[4:])
                 min_amount = get_min_order_amount(ticker)
-                if amount == None or min_amount == None :
+                if amount is None or min_amount is None :
                     dbout( ticker + " > Match SELL condition, but amount is " + krw)
                     continue
                 if amount > min_amount :
@@ -192,7 +219,7 @@ def trade_start(ticker) :
                     sell_flag   = False
                     time.sleep(10)  # 매도 금액 반영될 때까지 sleep
                     krw = upbit.get_balance("KRW")
-                    if krw == None or krw < 5000 :
+                    if krw is None or krw < 5000 :
                         time.sleep(1)
                         krw = upbit.get_balance("KRW")
                     dbout("%s > SELL!! 잔고 : %.0f" % (ticker, float(krw)))
