@@ -125,7 +125,7 @@ def trade_start(ticker) :
         
         ticker_amount = int(total_amount / len(ticker_list))    # 전체 ticker들 자산의 1/n
 
-    dbout(str(ticker) + " autotrade start")
+    dbout(str(ticker) + "> autotrade start, ticker_amount = " + ticker_amount)
 
     # 자동매매 시작
     while True:
@@ -145,9 +145,9 @@ def trade_start(ticker) :
                     amount      = upbit.get_balance(ticker[4:])
                     krw         = upbit.get_balance("KRW")
                     if krw < 5000 :
-                        dbout("%s : %.0f, ma_slope : %s\nma15_old : %.0f , ma15_new : %.0f\nma50_old : %.0f , ma50_new : %.0f"%(ticker, (float(amount) * get_current_price(ticker)), ma15_slope, float(ma15_old), float(ma15_new), float(ma50_old), float(ma50_new)))
+                        dbout("%s > %s : %.0f, ma_slope : %s\nma15_old : %.0f , ma15_new : %.0f\nma50_old : %.0f , ma50_new : %.0f"%(ticker, ticker, (float(amount) * get_current_price(ticker)), ma15_slope, float(ma15_old), float(ma15_new), float(ma50_old), float(ma50_new)))
                     else :
-                        dbout("%s krw : %.0f, ma_slope : %s\nma15_old : %.0f , ma15_new : %.0f\nma50_old : %.0f , ma50_new : %.0f"%(ticker, float(krw), ma15_slope, float(ma15_old), float(ma15_new), float(ma50_old), float(ma50_new)))
+                        dbout("%s > krw : %.0f, ma_slope : %s\nma15_old : %.0f , ma15_new : %.0f\nma50_old : %.0f , ma50_new : %.0f"%(ticker, float(krw), ma15_slope, float(ma15_old), float(ma15_new), float(ma50_old), float(ma50_new)))
                 send_cnt = 1
             else :
                 if (t_now.minute % 6 == 5) :
@@ -164,26 +164,30 @@ def trade_start(ticker) :
 
             if (ma15_slope > 0) and (buy_flag == True) and (buy_state == False) :       # 기울기 양수, ma15의 상승으로 인해 ma50과 교차 시
                 krw = upbit.get_balance("KRW")
-                if krw == None :
+                if krw == None or krw < 5000 :
+                    dbout( ticker + " > Match BUY condition, but krw is " + krw)
                     continue
                 if krw >= ticker_amount and krw > 5000 :
-                    #upbit.buy_market_order(ticker, ticker_amount*0.9995)       # 저장된 매도 금액 만큼 매수, 수수료 고려 0.9995 (99.95%)
-                    buy_state   = True
-                    buy_flag    = False
-                    dbout("BUY!! 매수금액 : " + str(krw*0.9995))
-                    # 엑셀 출력
-                    write_ws.append( [datetime.now().strftime('%m/%d %H:%M:%S'), ticker, "BUY", krw*0.9995, ma15_new, ma50_new] )
-                    write_wb.save('./Coin_Trading_Bot.xlsx')
+                    upbit.buy_market_order(ticker, ticker_amount*0.9995) # 저장된 매도 금액 만큼 매수, 수수료 고려 0.9995 (99.95%)    
                 else :
-                    dbout("Failed BUY. krw is '%.0f', but ticker_amount = '%d'"%(float(krw*0.9995), ticker_amount))
+                    dbout("%s > Warning! BUY. krw is '%.0f', but ticker_amount = '%d'"%(ticker, float(krw*0.9995), ticker_amount))
+                    upbit.buy_market_order(ticker, krw*0.9995)           # 남은 예수금 만큼 매수, 수수료 고려 0.9995 (99.95%)
+                
+                # 엑셀 출력
+                write_ws.append( [datetime.now().strftime('%m/%d %H:%M:%S'), ticker, "BUY", krw*0.9995, ma15_new, ma50_new] )
+                write_wb.save('./Coin_Trading_Bot.xlsx')
+                buy_state   = True
+                buy_flag    = False
+                dbout("%s > BUY!! 매수금액 : %s"%(ticker, str(krw*0.9995)))
 
             elif (sell_flag == True) and (buy_state == True):
                 amount     = upbit.get_balance(ticker[4:])
                 min_amount = get_min_order_amount(ticker)
                 if amount == None or min_amount == None :
+                    dbout( ticker + " > Match SELL condition, but amount is " + krw)
                     continue
                 if amount > min_amount :
-                    #upbit.sell_market_order(ticker, amount*0.9995)             # 보유 수량 전부 매도
+                    upbit.sell_market_order(ticker, amount*0.9995)             # 보유 수량 전부 매도
                     buy_state   = False
                     sell_flag   = False
                     time.sleep(10)  # 매도 금액 반영될 때까지 sleep
@@ -191,21 +195,21 @@ def trade_start(ticker) :
                     if krw == None or krw < 5000 :
                         time.sleep(1)
                         krw = upbit.get_balance("KRW")
-                    dbout("SELL!! 잔고 : %.0f" % float(krw))
+                    dbout("%s > SELL!! 잔고 : %.0f" % (ticker, float(krw)))
                     ticker_amount = krw     # 매도 금액 저장
                     # 엑셀 출력
                     write_ws.append( [datetime.now().strftime('%m/%d %H:%M:%S'), ticker, "SELL", krw, ma15_new, ma50_new] )
                     write_wb.save('./Coin_Trading_Bot.xlsx')
                 else :
-                    dbout("Failed SELL. %s is '%.0f'"%(ticker, float(amount*0.9995)))
+                    dbout("%s > Failed SELL. %s is '%.0f'"%(ticker, ticker, float(amount*0.9995)))
 
         except Exception as e:
-            dbout("Err! ", e)
+            dbout(ticker + " > Err! ", e)
             time.sleep(1)
 
     return
 
-ticker_list = ['KRW-ETH']
+ticker_list = ['KRW-ETH', 'KRW-XRP']
 dirname = os.path.dirname(__file__)
 
 # access_key key 가져오기
