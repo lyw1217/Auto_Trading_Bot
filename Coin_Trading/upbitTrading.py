@@ -57,7 +57,7 @@ def get_ma_min(ticker, min):
     df = pyupbit.get_ohlcv(ticker, interval="minute30", count=int(min))
     while True :
         if df is None :
-            time.sleep(1)
+            time.sleep(0.7)
             df = pyupbit.get_ohlcv(ticker, interval="minute30", count=int(min))
         else :
             break
@@ -69,7 +69,7 @@ def get_balance(ticker):
     balances = upbit.get_balances()
     while True :
         if balances is None :
-            time.sleep(1)
+            time.sleep(0.7)
             balances = upbit.get_balances()
         else :
             break
@@ -87,7 +87,7 @@ def get_current_price(ticker):
     orderbook = pyupbit.get_orderbook(tickers=ticker)[0]["orderbook_units"][0]["ask_price"]
     while True :
         if orderbook is None :
-            time.sleep(1)
+            time.sleep(0.7)
             orderbook = pyupbit.get_orderbook(tickers=ticker)[0]["orderbook_units"][0]["ask_price"]
         else :
             break
@@ -126,7 +126,7 @@ def trade_start(ticker) :
         ma50_old    = get_ma_min(ticker, 50)
         min_amount  = get_min_order_amount(ticker)
         if ma15_old is None or ma50_old is None or min_amount is None :
-            time.sleep(1)
+            time.sleep(0.7)
             continue
         break
 
@@ -157,7 +157,7 @@ def trade_start(ticker) :
     # 자동매매 시작
     while True:
         try:
-            time.sleep(len(ticker_list))    # 1초에 1개의 ticker만 시작되게끔 sleep
+            time.sleep(len(ticker_list)+1)    # 요청 수 제한
 
             ma15_slope  = get_slope_min(ticker, ma15_old, 15)
             ma15_new    = get_ma_min(ticker, 15)
@@ -220,7 +220,7 @@ def trade_start(ticker) :
                     time.sleep(10)  # 매도 금액 반영될 때까지 sleep
                     krw = upbit.get_balance("KRW")
                     if krw is None or krw < 5000 :
-                        time.sleep(1)
+                        time.sleep(0.7)
                         krw = upbit.get_balance("KRW")
                     dbout("%s > SELL!! 잔고 : %.0f" % (ticker, float(krw)))
                     ticker_amount = krw     # 매도 금액 저장
