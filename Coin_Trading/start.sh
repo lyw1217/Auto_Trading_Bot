@@ -1,11 +1,15 @@
 #!/bin/bash
-pid=$(ps -ef | grep upbitTrading.py | grep -v grep | awk '{print $2}')
+command=( `ps -ef | grep upbitTrading.py | grep -v grep | awk '{print $2}'` )
+echo ${command[@]}
 
-if [ -n "$pid" ]
+if [ -n "$command" ]
 then
-	echo "Found working bot! pid : $pid"
-	kill -9 $pid
-	echo "kill -9 $pid"
+	for pid in "${command[@]}"
+	do
+		echo "Found working bot! pid : $pid"
+		kill -9 $pid
+		echo "kill -9 $pid"
+	done
 else
 	echo "There are no working bot!"
 fi
@@ -22,11 +26,15 @@ nohup python3 upbitTrading.py > coin_${NOW}.log 2>&1 &
 
 sleep 1s
 
-pid=$(ps -ef | grep upbitTrading.py | grep -v grep | awk '{print $2}')
+command=( `ps -ef | grep upbitTrading.py | grep -v grep | awk '{print $2}'` )
+echo ${command[@]}
 
-if [ -n "$pid" ]
+if [ -n "$command" ]
 then
-	echo "Startup Successfully!  pid : $pid"
+	for pid in "${command[@]}"
+	do
+		echo "Startup Successfully!  pid : $pid"
+	done
 else
 	echo "Startup Failure, Try Agin.."
 fi
