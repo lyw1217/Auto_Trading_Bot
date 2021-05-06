@@ -273,8 +273,6 @@ if __name__ == '__main__' :
                             # 저장된 매도 금액 만큼 매수, 수수료 고려 0.9995 (99.95%)
                             ans = upbit.buy_market_order(t, 100000*0.9995, contain_req=True)
                             limits = ans[1]
-                            dbout("%s > Warning! BUY. krw is '%.0f', but ticker_balance = '%d'"%(t, float(krw*0.9995), 100000))
-                            
                         else :
                             dbout("%s > Warning! BUY. krw is '%.0f', but ticker_balance = '%d'"%(t, float(krw*0.9995), 100000))
                             # 남은 예수금 만큼 매수, 수수료 고려 0.9995 (99.95%)
