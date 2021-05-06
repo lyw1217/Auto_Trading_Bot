@@ -276,14 +276,13 @@ if __name__ == '__main__' :
                             continue
                         if krw >= 100000 and krw > 5000 :
                             # 저장된 매도 금액 만큼 매수, 수수료 고려 0.9995 (99.95%)
-                            #ans = upbit.buy_market_order(t, 100000*0.9995, contain_req=True)
-                            #limits = ans[1]
-                            dbout("%s > Warning! BUY. krw is '%.0f', but ticker_balance = '%d'"%(t, float(krw*0.9995), 100000))
+                            ans = upbit.buy_market_order(t, 100000*0.9995, contain_req=True)
+                            limits = ans[1]
                         else :
                             dbout("%s > Warning! BUY. krw is '%.0f', but ticker_balance = '%d'"%(t, float(krw*0.9995), 100000))
                             # 남은 예수금 만큼 매수, 수수료 고려 0.9995 (99.95%)
-                            #ans = upbit.buy_market_order(t, krw*0.9995, contain_req=True)
-                            #limits = ans[1]
+                            ans = upbit.buy_market_order(t, krw*0.9995, contain_req=True)
+                            limits = ans[1]
                         wait_limit(limits)
                         
                         # 엑셀 출력
@@ -303,8 +302,8 @@ if __name__ == '__main__' :
                             continue
                         if balance > min_balance :
                             # 보유 수량 전부 매도
-                            #ans = upbit.sell_market_order(t, balance*0.9995)
-                            #limits = ans[1]
+                            ans = upbit.sell_market_order(t, balance*0.9995)
+                            limits = ans[1]
                             wait_limit(limits)
                             ma[t][2]    = False
                             sell_flag   = False
