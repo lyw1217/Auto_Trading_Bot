@@ -164,9 +164,9 @@ def get_ma(_ticker) :
     return _ma15, _ma50
 
 def set_order_flag(_ma, _ma15_new, _ma50_new) :
-    # if (ma15_old < ma50_old) and (ma15_new >= ma50_new)
     _buy_flag  = False
     _sell_flag = False
+    # if (ma15_old < ma50_old) and (ma15_new >= ma50_new)
     if  (_ma[t][0] < _ma[t][1]) and (_ma15_new >= _ma50_new) :
         _buy_flag  = True
     # elif (ma15_old > ma50_old) and (ma15_new <= ma50_new)
@@ -244,11 +244,15 @@ if __name__ == '__main__' :
             #print("end_time : " + str(end_time))
 
             if (start_time < now < end_time - datetime.timedelta(seconds=30)) and (f_loop == 0):
+                print("")
+                krw = upbit.get_balance("KRW")
+                dbout("seek start, krw = [%.0f]"%(float(krw)))
                 for t in ticker_list :
                     if t in exclude_tickers :
                         continue
-                    
-                    #print("avail_cnt = " + str(avail_cnt) + " buy_cnt : " + str(buy_cnt))
+                    print("")
+                    print("TICKER : " + t)
+                    print("avail_cnt = " + str(avail_cnt) + " buy_cnt : " + str(buy_cnt))
 
                     ma15_new, ma50_new = get_ma(t)
                     if (ma[t][0] - ma15_new) < 0 :
@@ -256,14 +260,15 @@ if __name__ == '__main__' :
                     else :
                         ma15_slope = (-1)
 
-                    #print("ma15_new = " + str(ma15_new) + " ma50_new = " + str(ma50_new) + " ma15_slope = " + str(ma15_slope))
+                    print("ma15_old = %.1f"%(float(ma[t][0])) + " ma50_old = %.1f"%(float(ma[t][1])))
+                    print("ma15_new = %.1f"%(float(ma15_new)) + " ma50_new = %.1f"%(float(ma50_new)) + " ma15_slope = " + str(ma15_slope))
                     
                     buy_flag, sell_flag = set_order_flag(ma, ma15_new, ma50_new)
 
-                    #print("buy_flag = " + str(buy_flag) + " sell_flag = " + str(sell_flag))
+                    print("buy_flag = " + str(buy_flag) + " sell_flag = " + str(sell_flag))
 
                     # 기울기 양수, ma15의 상승으로 인해 ma50과 교차 시, 최대 가능 ticker수보다 구매 ticker 수가 더 작을 때
-                    if ((ma15_slope > 0) and (buy_flag == True) and (ma[t][2] == False)) or (avail_cnt > buy_cnt):
+                    if (ma15_slope > 0) and (buy_flag == True) and (ma[t][2] == False) and (avail_cnt > buy_cnt) :
                         krw, limits = upbit.get_balance("KRW", contain_req=True)
                         wait_limit(limits)
                         if krw is None or krw < 5000 :
@@ -271,13 +276,14 @@ if __name__ == '__main__' :
                             continue
                         if krw >= 100000 and krw > 5000 :
                             # 저장된 매도 금액 만큼 매수, 수수료 고려 0.9995 (99.95%)
-                            ans = upbit.buy_market_order(t, 100000*0.9995, contain_req=True)
-                            limits = ans[1]
+                            #ans = upbit.buy_market_order(t, 100000*0.9995, contain_req=True)
+                            #limits = ans[1]
+                            dbout("%s > Warning! BUY. krw is '%.0f', but ticker_balance = '%d'"%(t, float(krw*0.9995), 100000))
                         else :
                             dbout("%s > Warning! BUY. krw is '%.0f', but ticker_balance = '%d'"%(t, float(krw*0.9995), 100000))
                             # 남은 예수금 만큼 매수, 수수료 고려 0.9995 (99.95%)
-                            ans = upbit.buy_market_order(t, krw*0.9995, contain_req=True)
-                            limits = ans[1]
+                            #ans = upbit.buy_market_order(t, krw*0.9995, contain_req=True)
+                            #limits = ans[1]
                         wait_limit(limits)
                         
                         # 엑셀 출력
@@ -297,8 +303,8 @@ if __name__ == '__main__' :
                             continue
                         if balance > min_balance :
                             # 보유 수량 전부 매도
-                            ans = upbit.sell_market_order(t, balance*0.9995)
-                            limits = ans[1]
+                            #ans = upbit.sell_market_order(t, balance*0.9995)
+                            #limits = ans[1]
                             wait_limit(limits)
                             ma[t][2]    = False
                             sell_flag   = False
