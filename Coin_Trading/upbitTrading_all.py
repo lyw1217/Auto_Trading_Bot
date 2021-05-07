@@ -140,10 +140,14 @@ def get_avail_tickers_cnt(money) :
 
         balance, limits = upbit.get_balance(t[4:], contain_req=True)
         if balance > 0 :
-            total_balance = total_balance + (balance * get_current_price(t))
+            won_balance = balance * get_current_price(t)
+            total_balance = total_balance + won_balance
             _buy_cnt = _buy_cnt + 1
+            dbout ( "%s > balance : %.0f won" % (t , won_balance) )
 
-        wait_limit(limits)        
+        wait_limit(limits)
+    dbout ( ">>> buy count : %d" % _buy_cnt )
+    dbout ( ">>> total balance : %.0f won" % total_balance )
 
     return int(total_balance / money), _buy_cnt
 
@@ -214,6 +218,7 @@ if __name__ == '__main__' :
     # 시작 메세지
     dbout("Initialize...")
 
+    # 구매 가능 수량 및 보유 수량 반환
     avail_cnt, buy_cnt = get_avail_tickers_cnt(100000)
 
     # (dic) ma : { ticker : [ma15, ma50, buy_state] , ... }
@@ -331,9 +336,12 @@ if __name__ == '__main__' :
             else : 
                 if now > end_time - datetime.timedelta(seconds=30) :
                     f_loop = 0
+                # 구매 가능 수량 및 보유 수량 반환
+                elif end_time - datetime.timedelta(seconds=300) < now < end_time - datetime.timedelta(seconds=290) :
+                    avail_cnt, buy_cnt = get_avail_tickers_cnt(100000)
             
             time.sleep(1) 
                 
         except Exception as e:
-            dbout("Err! " + e)
+            dbout("Err! " + str(e))
             time.sleep(1)
