@@ -14,10 +14,10 @@ then
 	done
 	
 	sleep 1s
-
-	if [ -n "$command" ]
+	command2=( `ps -ef | grep upbitTrading | grep -v grep | awk '{print $2}'` )
+	if [ -n "$command2" ]
 	then
-		for pid in "${command[@]}"
+		for pid in "${command2[@]}"
 		do
 			echo -e "- process stil alive! pid : $pid"
 		done
