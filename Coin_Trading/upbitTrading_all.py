@@ -305,7 +305,7 @@ if __name__ == '__main__' :
                             continue
                         if balance > min_balance :
                             # 보유 수량 전부 매도
-                            upbit.sell_market_order(t, balance*0.9995)
+                            upbit.sell_market_order(t, balance)
                             ma[t][2]    = False
                             sell_flag   = False
                             time.sleep(10)  # 매도 금액 반영될 때까지 sleep
