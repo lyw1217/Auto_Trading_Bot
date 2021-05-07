@@ -282,10 +282,12 @@ if __name__ == '__main__' :
                         if krw >= 100000 and krw > 5000 :
                             # 저장된 매도 금액 만큼 매수, 수수료 고려 0.9995 (99.95%)
                             upbit.buy_market_order(t, 100000*0.9995, contain_req=True)
+                            dbout("%s > BUY!! 매수금액 : %.0f"%(t, float(100000*0.9995)))
                         else :
                             dbout("%s > Warning! BUY. krw is '%.0f', but ticker_balance = '%d'"%(t, float(krw*0.9995), 100000))
                             # 남은 예수금 만큼 매수, 수수료 고려 0.9995 (99.95%)
                             upbit.buy_market_order(t, krw*0.9995, contain_req=True)
+                            dbout("%s > BUY!! 매수금액 : %.0f"%(t, float(krw*0.9995)))
                         
                         # 엑셀 출력
                         write_ws.append( [datetime.datetime.now().strftime('%m/%d %H:%M:%S'), t, "BUY", krw*0.9995, ma15_new, ma50_new] )
@@ -293,14 +295,13 @@ if __name__ == '__main__' :
                         ma[t][2]    = True
                         buy_flag    = False
                         buy_cnt     = buy_cnt + 1
-                        dbout("%s > BUY!! 매수금액 : %s"%(t, str(krw*0.9995)))
 
                     elif (sell_flag == True) and (ma[t][2] == True):
                         balance, limits = upbit.get_balance(t[4:], contain_req=True)
                         wait_limit(limits)
                         min_balance = get_min_order_balance(t)
                         if balance is None or min_balance is None :
-                            dbout( t + " > Match SELL condition, but balance is " + balance)
+                            dbout( t + " > Match SELL condition, but balance is " + str(balance) + " less than " + str(min_balance))
                             continue
                         if balance > min_balance :
                             # 보유 수량 전부 매도
@@ -321,7 +322,7 @@ if __name__ == '__main__' :
                             buy_cnt = buy_cnt - 1
                             dbout("%s > SELL!! 잔고 : %.0f" % (t, float(krw)))
                         else :
-                            dbout("%s > Failed SELL. %s is '%.0f'"%(t, t, float(balance*0.9995)))
+                            dbout("%s > Failed SELL. %s balance is '%.0f'"%(t, t, float(balance*0.9995)))
 
                     ma[t][0] = ma15_new
                     ma[t][1] = ma50_new
