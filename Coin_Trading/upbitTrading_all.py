@@ -143,15 +143,17 @@ def get_avail_tickers_cnt(money) :
         if balance > 0 :
             won_balance = balance * get_current_price(t)
             total_balance = total_balance + won_balance
-            _buy_cnt = _buy_cnt + 1
+            min_balance = get_min_order_balance(t)
+            if won_balance >= min_balance :
+                _buy_cnt = _buy_cnt + 1
             dbout ( "%s > balance : %.0f won" % (t , won_balance) )
 
         wait_limit(limits)
     
     _avail_cnt = int(total_balance / money)
-    
-    dbout ( ">>> buy count : %d" % _buy_cnt )
+
     dbout ( ">>> avail cnt : %d" % _avail_cnt )
+    dbout ( ">>> buy count : %d" % _buy_cnt )
     dbout ( ">>> total balance : %.0f won" % total_balance )
 
     return _avail_cnt, _buy_cnt
