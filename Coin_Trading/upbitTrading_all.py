@@ -128,6 +128,7 @@ def get_avail_tickers_cnt(money) :
     1 ticker 당 money 원 기준
     '''
     _buy_cnt = 0
+    _avail_cnt = 0
 
     total_balance, limits = upbit.get_balance("KRW", contain_req=True)
     wait_limit(limits)
@@ -146,11 +147,14 @@ def get_avail_tickers_cnt(money) :
             dbout ( "%s > balance : %.0f won" % (t , won_balance) )
 
         wait_limit(limits)
+    
+    _avail_cnt = int(total_balance / money)
+    
     dbout ( ">>> buy count : %d" % _buy_cnt )
-    dbout ( ">>> avail cnt : %d" % avail_cnt )
+    dbout ( ">>> avail cnt : %d" % _avail_cnt )
     dbout ( ">>> total balance : %.0f won" % total_balance )
 
-    return int(total_balance / money), _buy_cnt
+    return _avail_cnt, _buy_cnt
 
 
 def get_ma(_ticker) :
