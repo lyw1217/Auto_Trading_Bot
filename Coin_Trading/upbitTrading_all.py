@@ -206,12 +206,34 @@ with open(os.path.join(dirname, '../file/slack_key.txt'), 'r') as file:
 global upbit
 upbit = pyupbit.Upbit(access_key, secret_key)
 
-exclude_tickers = [ 'KRW-BTC', 'KRW-BTT', 'KRW-MED', 'KRW-LOOM' ]
-#exclude_tickers = ['KRW-ETC', 'KRW-OMG', 'KRW-SNT', 'KRW-WAVES', 'KRW-XEM', 'KRW-QTUM', 'KRW-LSK', 'KRW-STEEM', 'KRW-XLM', 'KRW-ARDR', 'KRW-KMD', 'KRW-ARK', 'KRW-STORJ', 'KRW-GRS', 'KRW-REP', 'KRW-EMC2', 'KRW-ADA', 'KRW-SBD', 'KRW-POWR', 'KRW-BTG', 'KRW-ICX', 'KRW-EOS', 'KRW-TRX', 'KRW-SC', 'KRW-IGNIS', 'KRW-ONT', 'KRW-ZIL', 'KRW-POLY', 'KRW-ZRX', 'KRW-LOOM', 'KRW-BCH', 'KRW-ADX', 'KRW-BAT', 'KRW-IOST', 'KRW-DMT', 'KRW-RFR', 'KRW-CVC', 'KRW-IQ', 'KRW-IOTA', 'KRW-MFT', 'KRW-ONG', 'KRW-GAS', 'KRW-UPP', 'KRW-ELF', 'KRW-KNC', 'KRW-BSV', 'KRW-THETA', 'KRW-EDR', 'KRW-QKC', 'KRW-BTT', 'KRW-MOC', 'KRW-ENJ', 'KRW-TFUEL', 'KRW-MANA', 'KRW-ANKR', 'KRW-AERGO', 'KRW-ATOM', 'KRW-TT', 'KRW-CRE', 'KRW-SOLVE', 'KRW-MBL', 'KRW-TSHP', 'KRW-WAXP', 'KRW-HBAR', 'KRW-MED', 'KRW-MLK', 'KRW-STPT', 'KRW-ORBS', 'KRW-VET', 'KRW-CHZ', 'KRW-PXL', 'KRW-STMX', 'KRW-DKA', 'KRW-HIVE', 'KRW-KAVA', 'KRW-AHT', 'KRW-LINK', 'KRW-XTZ', 'KRW-BORA', 'KRW-JST', 'KRW-CRO', 'KRW-TON', 'KRW-SXP', 'KRW-LAMB', 'KRW-HUNT', 'KRW-MARO', 'KRW-PLA', 'KRW-DOT', 'KRW-SRM', 'KRW-MVL', 'KRW-PCI', 'KRW-STRAX', 'KRW-AQT', 'KRW-BCHA', 'KRW-GLM', 'KRW-QTCON', 'KRW-SSX', 'KRW-META', 'KRW-OBSR', 'KRW-FCT2', 'KRW-LBC', 'KRW-CBK', 'KRW-SAND', 'KRW-HUM', 'KRW-DOGE', 'KRW-STRK', 'KRW-PUNDIX', 'KRW-FLOW', 'KRW-DAWN', 'KRW-AXS', 'KRW-STX']
+exclude_tickers = [ 'KRW-BTC'   , 'KRW-BTT'     , 'KRW-MED'     , 'KRW-LOOM' ]
+kimchi_tickers = [ 'KRW-SNT'    , 'KRW-STEEM'   , 'KRW-ARK'     , 'KRW-GRS'     , 'KRW-EMC2'    , 
+                   'KRW-SBD'    , 'KRW-POWR'    , 'KRW-IGNIS'   , 'KRW-POLY'    , 'KRW-LOOM'    ,
+                   'KRW-ADX'    , 'KRW-DMT'     , 'KRW-RFR'     , 'KRW-IQ'      , 'KRW-GAS'     ,
+                   'KRW-UPP'    , 'KRW-ELF'     , 'KRW-BSV'     , 'KRW-EDR'     , 'KRW-QKC'     ,
+                   'KRW-MOC'    , 'KRW-AERGO'   , 'KRW-TT'      , 'KRW-CRE'     , 'KRW-SOLVE'   ,
+                   'KRW-TSHP'   , 'KRW-WAXP'    , 'KRW-MED'     , 'KRW-MLK'     , 'KRW-ORBS'    ,
+                   'KRW-PXL'    , 'KRW-DKA'     , 'KRW-AHT'     , 'KRW-BORA'    , 'KRW-CRO'     ,
+                   'KRW-TON'    , 'KRW-LAMB'    , 'KRW-HUNT'    , 'KRW-MARO'    , 'KRW-PLA'     ,
+                   'KRW-MVL'    , 'KRW-PCI'     , 'KRW-AQT'     , 'KRW-BCHA'    , 'KRW-GLM'     ,
+                   'KRW-QTCON'  , 'KRW-SSX'     , 'KRW-META'    , 'KRW-OBSR'    , 'KRW-FCT2'    ,
+                   'KRW-LBC'    , 'KRW-CBK'     , 'KRW-HUM'     , 'KRW-STRK'    , 'KRW-FLOW'    ,
+                   'KRW-DAWN'   ,
+                ]
+
 
 ticker_list = [ ]
 limits      = { }
 ticker_list, limits = pyupbit.get_tickers(fiat="KRW", limit_info=True)
+
+# 김치코인 제외
+exclude_tickers.extend(kimchi_tickers)
+# 중복 제거
+set_exclude     = set(exclude_tickers)
+exclude_tickers = list(set_exclude)
+# tickers 목록에서 exclude 제외
+set_tickers     = set(ticker_list)
+ticker_list     = list(set_tickers - set_exclude)
 
 buy_flag      = False
 sell_flag     = False
@@ -230,8 +252,10 @@ if __name__ == '__main__' :
 
     # (dic) ma : { ticker : [ma15, ma50, buy_state] , ... }
     ma = {}
+
     for t in ticker_list :
         if t in exclude_tickers :
+            ticker_list.remove(t)
             continue
         ma15_old, ma50_old = get_ma(t)
         balance, limits = upbit.get_balance(t[4:], contain_req=True)
