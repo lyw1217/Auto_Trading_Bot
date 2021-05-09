@@ -147,6 +147,7 @@ def get_avail_tickers_cnt(money) :
 
         wait_limit(limits)
     dbout ( ">>> buy count : %d" % _buy_cnt )
+    dbout ( ">>> avail cnt : %d" % avail_cnt )
     dbout ( ">>> total balance : %.0f won" % total_balance )
 
     return int(total_balance / money), _buy_cnt
