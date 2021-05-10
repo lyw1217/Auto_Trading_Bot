@@ -38,6 +38,7 @@ write_ws['C1'] = '구분'     # 매도, 매수 구분
 write_ws['D1'] = '매수금액'  # 매수 금액
 write_ws['E1'] = 'MA15'    # 15 이동평균선
 write_ws['F1'] = 'MA50'    # 50 이동평균선
+write_ws['G1'] = '총액'     # 총액
 
 # 행 단위 추가
 # write_ws.append( [4, 5, 6] )

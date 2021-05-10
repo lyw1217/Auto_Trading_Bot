@@ -90,7 +90,7 @@ def get_current_price(ticker):
             orderbook = pyupbit.get_orderbook(tickers=ticker)[0]["orderbook_units"][0]["ask_price"]
         else :
             break
-    return orderbook
+    return float(orderbook)
 
 def get_slope_min(ticker, ma_old, min):
     """ 이전 값과 비교, 새로운 조회값이 더 크면 양수 """
@@ -132,7 +132,6 @@ def get_avail_tickers_cnt(money) :
 
     total_balance, limits = upbit.get_balance("KRW", contain_req=True)
     wait_limit(limits)
-    #print("tot : " + str(total_balance) + ", limit : " + str(limits))
     
     # 이미 매수한 ticker 금액 더하기
     for t in ticker_list :
@@ -158,6 +157,24 @@ def get_avail_tickers_cnt(money) :
 
     return _avail_cnt, _buy_cnt
 
+def get_total_balance() :
+    ''' 총 보유 자산 조회 '''
+    total_balance, limits = upbit.get_balance("KRW", contain_req=True)
+    wait_limit(limits)
+    
+    # 이미 매수한 ticker 금액 더하기
+    for t in ticker_list :
+        if t in exclude_tickers :
+            continue
+
+        balance, limits = upbit.get_balance(t[4:], contain_req=True)
+        if balance > 0 :
+            won_balance = balance * get_current_price(t)
+            total_balance = total_balance + won_balance
+
+        wait_limit(limits)
+
+    return total_balance
 
 def get_ma(_ticker) :
     '''
@@ -314,14 +331,15 @@ if __name__ == '__main__' :
                             # 저장된 매도 금액 만큼 매수, 수수료 고려 0.9995 (99.95%)
                             upbit.buy_market_order(t, 100000*0.9995, contain_req=True)
                             dbout("%s > BUY!! 매수금액 : %.0f"%(t, float(100000*0.9995)))
+                            write_ws.append( [datetime.datetime.now().strftime('%m/%d %H:%M:%S'), t, "BUY", 100000*0.9995, ma15_new, ma50_new, get_total_balance()] )
                         else :
                             dbout("%s > Warning! BUY. krw is '%.0f', but ticker_balance = '%d'"%(t, float(krw*0.9995), 100000))
                             # 남은 예수금 만큼 매수, 수수료 고려 0.9995 (99.95%)
                             upbit.buy_market_order(t, krw*0.9995, contain_req=True)
                             dbout("%s > BUY!! 매수금액 : %.0f"%(t, float(krw*0.9995)))
+                            write_ws.append( [datetime.datetime.now().strftime('%m/%d %H:%M:%S'), t, "BUY", int(krw*0.9995), ma15_new, ma50_new, get_total_balance()] )
                         
                         # 엑셀 출력
-                        write_ws.append( [datetime.datetime.now().strftime('%m/%d %H:%M:%S'), t, "BUY", krw*0.9995, ma15_new, ma50_new] )
                         write_wb.save('./Coin_Trading_Bot.xlsx')
                         ma[t][2]    = True
                         buy_flag    = False
@@ -348,7 +366,7 @@ if __name__ == '__main__' :
                                 wait_limit(limits)
                             
                             # 엑셀 출력
-                            write_ws.append( [datetime.datetime.now().strftime('%m/%d %H:%M:%S'), t, "SELL", krw, ma15_new, ma50_new] )
+                            write_ws.append( [datetime.datetime.now().strftime('%m/%d %H:%M:%S'), t, "SELL", int((balance*get_current_price(t))*0.9995), ma15_new, ma50_new, get_total_balance()] )
                             write_wb.save('./Coin_Trading_Bot.xlsx')
                             buy_cnt = buy_cnt - 1
                             dbout("%s > SELL!! 잔고 : %.0f" % (t, float(krw)))
